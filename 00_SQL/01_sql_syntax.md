@@ -227,4 +227,134 @@ WHERE condition
 
 ---
 
-## Course #2 -> Group By, Having & Count
+## Course #3 -> Group By, Having & Count
+
+### Introduction
+Now that you can select raw data, you're ready to learn how to group your data and count things within those groups. This can help you answer questions like:
+
+- How many of each kind of fruit has our store sold?
+- How many species of animal has the vet office treated?
+To do this, you'll learn about three new techniques: **GROUP BY**, **HAVING** and **COUNT()**. Once again, we'll use this made-up table of information on pets.
+
+<img src='./images/groupby1.png' 
+style="float: center; margin-right: 20px;"/>
+
+### **COUNT()**
+**COUNT()**, as you may have guessed from the name, returns a count of things. If you pass it the name of a column, it will return the number of entries in that column.
+
+For instance, if we **SELECT** the **COUNT()** of the `ID` column in the `pets` table, it will return 4, because there are 4 ID's in the table.
+
+<img src='./images/groupby2.png' 
+style="float: center; margin-right: 20px;"/>
+
+**COUNT()** is an example of an **aggregate function**, which takes many values and returns one. (Other examples of aggregate functions include **SUM()**, **AVG()**, **MIN()**, and **MAX()**.) As you'll notice in the picture above, aggregate functions introduce strange column names (like `f0__`). Later in this tutorial, you'll learn how to change the name to something more descriptive.
+
+### **GROUP BY**
+**GROUP BY** takes the name of one or more columns, and treats all rows with the same value in that column as a single group when you apply aggregate functions like **COUNT()**.
+
+For example, say we want to know how many of each type of animal we have in the `pets` table. We can use **GROUP BY** to group together rows that have the same value in the `Animal` column, while using **COUNT()** to find out how many ID's we have in each group.
+
+<img src='./images/groupby3.png' 
+style="float: center; margin-right: 20px;"/>
+
+It returns a table with three rows (one for each distinct animal). We can see that the `pets` table contains 1 rabbit, 1 dog, and 2 cats.
+
+**GROUP BY ... HAVING**
+**HAVING** is used in combination with **GROUP BY** to ignore groups that don't meet certain criteria.
+
+So this query, for example, will only include groups that have more than one ID in them.
+
+<img src='./images/groupby4.png' 
+style="float: center; margin-right: 20px;"/>
+
+Since only one group meets the specified criterion, the query will return a table with only one row.
+
+### Example: Which Hacker News comments generated the most discussion?
+Ready to see an example on a real dataset? The Hacker News dataset contains information on stories and comments from the Hacker News social networking site.
+
+We'll work with the `comments` table and begin by printing the first few rows.
+
+```
+from google.cloud import bigquery
+
+# Create a "Client" object
+client = bigquery.Client()
+
+# Construct a reference to the "hacker_news" dataset
+dataset_ref = client.dataset("hacker_news", project="bigquery-public-data")
+
+# API request - fetch the dataset
+dataset = client.get_dataset(dataset_ref)
+
+# Construct a reference to the "comments" table
+table_ref = dataset_ref.table("comments")
+
+# API request - fetch the table
+table = client.get_table(table_ref)
+
+# Preview the first five lines of the "comments" table
+client.list_rows(table, max_results=5).to_dataframe()
+```
+
+Let's use the table to see which comments generated the most replies. Since:
+
+- the `parent` column indicates the comment that was replied to, and
+- the `id` column has the unique ID used to identify each comment,
+
+we can **GROUP BY** the `parent` column and **COUNT()** the `id` column in order to figure out the number of comments that were made as responses to a specific comment.
+
+Furthermore, since we're only interested in popular comments, we'll look at comments with more than ten replies. So, we'll only return groups **HAVING** more than ten ID's.
+
+```
+# Query to select comments that received more than 10 replies
+query_popular = """
+                SELECT parent, COUNT(id)
+                FROM `bigquery-public-data.hacker_news.comments`
+                GROUP BY parent
+                HAVING COUNT(id) > 10
+                """
+```
+
+### Let's run the query :)
+
+```
+# Set up the query (cancel the query if it would use too much of 
+# your quota, with the limit set to 10 GB)
+safe_config = bigquery.QueryJobConfig(maximum_bytes_billed=10**10)
+query_job = client.query(query_popular, job_config=safe_config)
+
+# API request - run the query, and convert the results to a pandas DataFrame
+popular_comments = query_job.to_dataframe()
+
+# Print the first five rows of the DataFrame
+popular_comments.head()
+```
+
+### Aliasing and other improvements
+A couple hints to make your queries even better:
+
+- The column resulting from `COUNT(id)` was called `f0__`. That's not a very descriptive name. You can change the name by adding AS `NumPosts` after you specify the aggregation. This is called **aliasing**, and it will be covered in more detail in an upcoming lesson.
+  
+- If you are ever unsure what to put inside the **COUNT()** function, you can do `COUNT(1)` to count the rows in each group. Most people find it especially readable, because we know it's not focusing on other columns. It also scans less data than if supplied column names (making it faster and using less of your data access quota).
+
+
+```
+# Improved version of earlier query, now with aliasing & improved readability
+query_improved = """
+                 SELECT parent, COUNT(1) AS NumPosts
+                 FROM `bigquery-public-data.hacker_news.comments`
+                 GROUP BY parent
+                 HAVING COUNT(1) > 10
+                 """
+
+safe_config = bigquery.QueryJobConfig(maximum_bytes_billed=10**10)
+query_job = client.query(query_improved, job_config=safe_config)
+
+# API request - run the query, and convert the results to a pandas DataFrame
+improved_df = query_job.to_dataframe()
+
+# Print the first five rows of the DataFrame
+improved_df.head()
+```
+
+
