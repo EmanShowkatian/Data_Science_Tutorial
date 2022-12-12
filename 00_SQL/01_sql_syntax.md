@@ -18,7 +18,7 @@ We'll build our SQL skills using BigQuery, a web service that lets you apply SQL
 
 <pre>
 <code>dataset_ref = client.dataset("hacker_news", project = "bigquery-public-data")</code>
-<code>dataset = client.get_table(dataset_ref)</code>
+<code>dataset = client.get_dataset(dataset_ref)</code>
 </pre>
 
 Every dataset is just a collection of tables. You can think of a dataset as a spreadsheet file containing multiple tables, all composed of rows and columns.
@@ -38,7 +38,7 @@ Similar to how we fetched a dataset, we can fetch a table. In the code cell belo
 
 <pre>
 <code>table_ref = dataset_ref.table("full")</code>
-<code>table = client.get_dataset(table_ref)</code>
+<code>table = client.get_table(table_ref)</code>
 </pre>
 
 <img src='./images/google_cloud_bigquery_workflow.png' 
@@ -101,7 +101,7 @@ The most basic SQL query selects a single column from a single table. To do this
 For instance, to select the `Name` column (from the `pets` table in the `pet_records` database in the `bigquery-public-data` project), our query would appear as follows:
 <img src='./images/select_from.png' 
 style="float: center; margin-right: 20px;"/>
-Note that when writing an SQL query, the argument we pass to **FROM** is not in single or double quotation marks (' or "). It is in backticks (`).
+##### Note that when writing an SQL query, the argument we pass to **FROM** is not in single or double quotation marks (' or "). It is in backticks (`).
 
 ### **WHERE ...**
 
@@ -358,3 +358,17 @@ improved_df.head()
 ```
 
 
+---
+
+## Course #4 -> Order By 😎
+##### Order your results to focus on the most important data for your use case.
+
+
+#### Introduction
+
+**Quick Recap**:
+ - `SELECT` to pull specific columns from a table
+ - `WHERE` to pull rows that meet specified criteria
+ - `COUNT()` as aggregate functions along with `GROUP BY` to treat multiple rows as a single group.
+
+Now you'll learn how to change the order of your results using the ORDER BY clause, and you'll explore a popular use case by applying ordering to dates. To illustrate what you'll learn in this tutorial, we'll work with a slightly modified version of our familiar pets table.
